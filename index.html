@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="frame-ancestors teams.microsoft.com *.teams.microsoft.com *.skype.com *.office.com indianapacers.sharepoint.com">
+<title>CIE Segmentation Bot</title>
+<script src="https://res.cdn.office.net/teams-js/2.22.0/js/MicrosoftTeams.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --gold: #C8A84B;
+    --gold-light: #E8D08A;
+    --gold-dim: #7A6230;
+    --navy: #0B1524;
+    --navy-mid: #122035;
+    --navy-surface: #1A2D47;
+    --navy-border: rgba(200,168,75,0.15);
+    --navy-border-hover: rgba(200,168,75,0.35);
+    --text-primary: #F0EAD6;
+    --text-secondary: #8A9BB5;
+    --text-muted: #4A5E78;
+    --font-sans: 'DM Sans', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--navy);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── KEY SCREEN ── */
+  #key-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 2rem;
+    background: var(--navy);
+  }
+
+  .key-card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--navy-surface);
+    border: 0.5px solid var(--navy-border);
+    border-radius: 16px;
+    padding: 2.5rem 2rem;
+    animation: fadeUp 0.4s ease;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .key-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 2rem;
+  }
+
+  .key-logo-mark {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    color: var(--navy);
+    font-weight: 500;
+  }
+
+  .key-logo-text { font-size: 15px; font-weight: 500; color: var(--text-primary); }
+  .key-logo-sub { font-size: 11px; color: var(--text-secondary); margin-top: 1px; }
+
+  .key-card h2 { font-size: 20px; font-weight: 500; color: var(--text-primary); margin-bottom: 6px; }
+  .key-card p { font-size: 13px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 1.5rem; }
+  .key-card p a { color: var(--gold); text-decoration: none; }
+  .key-card p a:hover { text-decoration: underline; }
+
+  .key-label { font-size: 11px; font-weight: 500; color: var(--text-secondary); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 6px; }
+
+  .key-input-wrap { position: relative; margin-bottom: 1.25rem; }
+  .key-input-wrap input {
+    width: 100%;
+    background: var(--navy-mid);
+    border: 0.5px solid var(--navy-border);
+    border-radius: var(--radius-sm);
+    padding: 10px 40px 10px 12px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .key-input-wrap input:focus { border-color: var(--navy-border-hover); }
+  .key-input-wrap input::placeholder { color: var(--text-muted); font-family: var(--font-sans); }
+  .toggle-vis {
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; cursor: pointer; color: var(--text-muted);
+    font-size: 15px; padding: 2px; transition: color 0.15s;
+  }
+  .toggle-vis:hover { color: var(--text-secondary); }
+
+  .key-note {
+    display: flex; align-items: flex-start; gap: 8px;
+    background: rgba(200,168,75,0.06); border: 0.5px solid rgba(200,168,75,0.2);
+    border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 1.25rem;
+  }
+  .key-note svg { flex-shrink: 0; margin-top: 1px; }
+  .key-note span { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+
+  .key-btn {
+    width: 100%; padding: 11px;
+    background: var(--gold);
+    border: none; border-radius: var(--radius-sm);
+    color: var(--navy); font-family: var(--font-sans);
+    font-size: 14px; font-weight: 500; cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .key-btn:hover { background: var(--gold-light); }
+  .key-btn:active { transform: scale(0.98); }
+  .key-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .key-error { font-size: 12px; color: #F09595; margin-top: 8px; display: none; }
+
+  /* ── MAIN APP ── */
+  #app {
+    display: none;
+    flex-direction: column;
+    height: 100vh;
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  #topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 20px;
+    border-bottom: 0.5px solid var(--navy-border);
+    background: var(--navy);
+    flex-shrink: 0;
+  }
+
+  .tb-left { display: flex; align-items: center; gap: 10px; }
+  .tb-mark {
+    width: 30px; height: 30px; border-radius: var(--radius-sm);
+    background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; color: var(--navy); font-weight: 500;
+  }
+  .tb-title { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+  .tb-sub { font-size: 11px; color: var(--text-secondary); }
+
+  .tb-right { display: flex; align-items: center; gap: 8px; }
+  .src-pill {
+    font-size: 10px; font-weight: 500; padding: 3px 8px; border-radius: 20px;
+    border: 0.5px solid;
+  }
+  .sp-gold { border-color: rgba(200,168,75,0.4); color: var(--gold); background: rgba(200,168,75,0.08); }
+  .sp-blue { border-color: rgba(56,138,221,0.4); color: #85B7EB; background: rgba(56,138,221,0.08); }
+  .sp-teal { border-color: rgba(29,158,117,0.4); color: #5DCAA5; background: rgba(29,158,117,0.08); }
+
+  .logout-btn {
+    background: none; border: 0.5px solid var(--navy-border);
+    border-radius: var(--radius-sm); padding: 5px 10px;
+    color: var(--text-muted); font-size: 11px; cursor: pointer;
+    font-family: var(--font-sans); transition: all 0.15s;
+  }
+  .logout-btn:hover { border-color: var(--navy-border-hover); color: var(--text-secondary); }
+
+  #chat-area {
+    flex: 1; overflow-y: auto; padding: 20px;
+    display: flex; flex-direction: column; gap: 14px;
+    scrollbar-width: thin; scrollbar-color: var(--navy-border) transparent;
+  }
+  #chat-area::-webkit-scrollbar { width: 4px; }
+  #chat-area::-webkit-scrollbar-thumb { background: var(--navy-border); border-radius: 4px; }
+
+  .msg { display: flex; gap: 10px; max-width: 85%; animation: msgIn 0.2s ease; }
+  @keyframes msgIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .msg.user { align-self: flex-end; flex-direction: row-reverse; }
+
+  .av {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 500; flex-shrink: 0; margin-top: 2px;
+  }
+  .bot .av { background: rgba(200,168,75,0.15); color: var(--gold); border: 0.5px solid rgba(200,168,75,0.25); }
+  .user .av { background: var(--navy-surface); color: var(--text-secondary); border: 0.5px solid var(--navy-border); }
+
+  .bub {
+    padding: 10px 14px; border-radius: var(--radius);
+    font-size: 13.5px; line-height: 1.7; color: var(--text-primary);
+  }
+  .bot .bub {
+    background: var(--navy-surface);
+    border: 0.5px solid var(--navy-border);
+    border-radius: 3px var(--radius) var(--radius) var(--radius);
+  }
+  .user .bub {
+    background: rgba(200,168,75,0.12);
+    border: 0.5px solid rgba(200,168,75,0.25);
+    border-radius: var(--radius) 3px var(--radius) var(--radius);
+    color: var(--gold-light);
+  }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+  .chip {
+    font-size: 11.5px; padding: 4px 10px; border-radius: 20px;
+    border: 0.5px solid var(--navy-border-hover); color: var(--text-secondary);
+    cursor: pointer; background: transparent; transition: all 0.15s;
+    font-family: var(--font-sans);
+  }
+  .chip:hover { background: var(--navy-surface); color: var(--text-primary); border-color: rgba(200,168,75,0.5); }
+
+  .seg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px,1fr)); gap: 7px; margin-top: 10px; }
+  .seg-card {
+    background: var(--navy-mid); border: 0.5px solid var(--navy-border);
+    border-radius: var(--radius-sm); padding: 9px 11px; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .seg-card:hover { border-color: var(--navy-border-hover); background: var(--navy-surface); }
+  .sc-src { font-size: 9.5px; font-weight: 500; margin-bottom: 4px; }
+  .sc-name { font-size: 11.5px; font-weight: 500; color: var(--text-primary); line-height: 1.3; }
+  .sc-size { font-size: 10px; color: var(--text-muted); margin-top: 3px; font-family: var(--font-mono); }
+
+  .typing-bub { display: flex; align-items: center; gap: 5px; padding: 12px 14px; }
+  .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--gold-dim); animation: pulse 1.2s infinite; }
+  .dot:nth-child(2) { animation-delay: 0.2s; }
+  .dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes pulse { 0%,60%,100%{opacity:0.3;transform:scale(1)} 30%{opacity:1;transform:scale(1.3)} }
+
+  #input-area {
+    padding: 12px 20px 16px;
+    border-top: 0.5px solid var(--navy-border);
+    background: var(--navy);
+    flex-shrink: 0;
+  }
+
+  .input-row { display: flex; gap: 8px; align-items: flex-end; }
+  #user-input {
+    flex: 1; resize: none; min-height: 40px; max-height: 100px;
+    background: var(--navy-surface);
+    border: 0.5px solid var(--navy-border);
+    border-radius: var(--radius-sm);
+    padding: 9px 12px; font-family: var(--font-sans); font-size: 13.5px;
+    color: var(--text-primary); outline: none; line-height: 1.5;
+    transition: border-color 0.15s;
+  }
+  #user-input:focus { border-color: var(--navy-border-hover); }
+  #user-input::placeholder { color: var(--text-muted); }
+
+  #send-btn {
+    width: 38px; height: 38px; border-radius: var(--radius-sm);
+    background: var(--gold); border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: background 0.15s, transform 0.1s;
+  }
+  #send-btn:hover { background: var(--gold-light); }
+  #send-btn:active { transform: scale(0.95); }
+  #send-btn svg { width: 16px; height: 16px; color: var(--navy); }
+
+  .input-hint { font-size: 11px; color: var(--text-muted); margin-top: 6px; text-align: center; }
+
+  .file-upload-area {
+    border: 0.5px dashed var(--navy-border);
+    border-radius: var(--radius-sm); padding: 10px 14px;
+    display: flex; align-items: center; gap: 10px; margin-bottom: 8px; cursor: pointer;
+    transition: border-color 0.15s; background: transparent;
+  }
+  .file-upload-area:hover { border-color: var(--navy-border-hover); }
+  .file-upload-area input { display: none; }
+  .file-upload-area span { font-size: 12px; color: var(--text-muted); }
+  .file-upload-area .file-name { color: var(--gold); font-family: var(--font-mono); font-size: 11.5px; }
+  .fu-icon { width: 22px; height: 22px; border-radius: 4px; background: rgba(200,168,75,0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<!-- KEY SCREEN -->
+<div id="key-screen">
+  <div class="key-card">
+    <div class="key-logo">
+      <div class="key-logo-mark">CIE</div>
+      <div>
+        <div class="key-logo-text">Segmentation Bot</div>
+        <div class="key-logo-sub">Pacers Sports &amp; Entertainment</div>
+      </div>
+    </div>
+    <h2>Enter your API key</h2>
+    <p>This tool uses the Anthropic Claude API. Enter your API key to get started — it's stored only in your browser session and never sent anywhere except directly to Anthropic.<br><br>Get a key at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></p>
+    <div class="key-label">Anthropic API Key</div>
+    <div class="key-input-wrap">
+      <input type="password" id="api-key-input" placeholder="sk-ant-api03-..." autocomplete="off" spellcheck="false">
+      <button class="toggle-vis" onclick="toggleVis()" title="Show/hide key">
+        <svg id="vis-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+    <div class="key-note">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C8A84B" stroke-width="2" style="margin-top:1px"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      <span>Your key stays in your browser tab only. It's never stored or logged. Closing the tab clears it.</span>
+    </div>
+    <button class="key-btn" id="launch-btn" onclick="launch()">Launch Segmentation Bot</button>
+    <div class="key-error" id="key-error">Please enter a valid Anthropic API key (starts with sk-ant-)</div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <div id="topbar">
+    <div class="tb-left">
+      <div class="tb-mark">CIE</div>
+      <div>
+        <div class="tb-title">Segmentation Bot</div>
+        <div class="tb-sub">Pacers Sports &amp; Entertainment</div>
+      </div>
+    </div>
+    <div class="tb-right">
+      <span class="src-pill sp-gold">LiveAnalytics</span>
+      <span class="src-pill sp-blue">Ticketmaster</span>
+      <span class="src-pill sp-teal">Minerva</span>
+      <button class="logout-btn" onclick="logout()">Change key</button>
+    </div>
+  </div>
+
+  <div id="chat-area"></div>
+
+  <div id="input-area">
+    <label class="file-upload-area" for="file-input">
+      <div class="fu-icon">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C8A84B" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </div>
+      <span id="file-label">Upload an Excel or CSV file to add to context</span>
+      <input type="file" id="file-input" accept=".xlsx,.xls,.csv" onchange="handleFile(event)">
+    </label>
+    <div class="input-row">
+      <textarea id="user-input" placeholder="Ask about segments, audience ideas, or partnership angles..." rows="1"></textarea>
+      <button id="send-btn" onclick="sendMessage()" title="Send">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+      </button>
+    </div>
+    <div class="input-hint">Enter to send &nbsp;·&nbsp; Shift+Enter for new line</div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+// Initialize Teams SDK so the iframe loads correctly
+if (window.microsoftTeams) {
+  microsoftTeams.app.initialize();
+}
+
+let API_KEY = '';
+let history = [];
+let fileContext = '';
+
+const DATA_CONTEXT = `You are the CIE Segmentation Bot for Pacers Sports & Entertainment (Indiana Pacers + Indiana Fever). You have deep expertise in three data sources:
+
+=== SOURCE 1: LIVEA / TICKETMASTER DATA (278 columns) ===
+Categories: Customer & Account Identifiers (tm_unique_person_id, account_id, liveanalytics_id), Personal & Household (name, address, city, state, zip, email, gender, age, adults_in_household, children_present_in_household, household_marriage_status), Household Demographics (age/gender presence flags for every bracket 0-2 through 75+), Residence & Location (length_of_residence, residence_type, metropolitan_statistical_area, distance_to_venue_miles/kilometers), Occupation & Education (occupation and education level for account holder + two household individuals), Income & Financial (self_reported_household_income, sourced_household_income large/narrow/all ranges, sourced_household_net_worth, discretionary_income_index, financial_composite_score, affluent flag), Credit Cards (bank/gas/retail/travel/entertainment/premium/upscale credit card flags; Visa/Mastercard/Amex/Discover flags), Mail & Marketing (mail_solicitation, mail_purchaser, mail_responder, mail_donor), Interests & Lifestyle (theater_performing_arts, arts, domestic_travel, home_stereo, music_player, music_listening, music_collector, movie_collector, motor_racing, football, baseball, basketball, hockey, soccer, tennis, sweepstakes_contest, sports, music_movie, nascar, upscale_living, cultural_living interests), Vehicle Ownership (truck_owner, motorcycle_owner, rv_owner, vehicles_owned, primary_vehicle_type/classification), Segmentation & Clustering (personicx_cluster, personicx_group life stage), Purchase & Event Behavior (most_recent_purchase_date, events_purchased, average_tickets_per_event, total_spend, spend_per_event, average/lowest/highest_ticket_price, platinum/primary/resale/parking/upsell/group purchaser flags, average_travel_to_events_miles, purchased_events_over_200_miles_away, spend_per_event by concerts/arts/sports/family/misc, share_of_wallet by category, transaction % by ticket count 1-2/3-4/5-8/9+, by price tier $1-25 through $200+, by timing presale/onsale/first_week/in_between/final_week, by channel internet/phone/mobile/box_office/outlet, rfm_score, rfm_grade, lifetime_spend), Propensity & Model Scores (genre: adult_contemporary, alt_rock, country, edm, hard_rock_metal, jazz_blues, latin, urban_hip_hop_rap, rnb_soul, rock_pop, music_festivals; arts: broadway_musical, comedy, classical_opera, theatre_plays, ballet_dance, arts_festival, magic_shows, circus, family_shows; sports: boxing, mma, wrestling, baseball, college_baseball, basketball, college_basketball, football, college_football, hockey, college_hockey, soccer, motorsports, rodeo, golf, tennis; likelihood scores: tm_plus_buyer, platinum_buyer, upsell_buyer, parking_buyer, multiple_ticket_buyer, traveler_500_plus_miles, early_buyer, late_buyer, top_tier_buyer, low_tier_buyer, high_price_buyer; TEAM MODEL SCORES: pacers_attraction_model_score/grade, fever_attraction_model_score/grade, pacers_season_plan_model_score/grade, pacers_ticket_price_model_score/grade, pacers_season_spend_model_score/grade, fever_season_plan_model_score/grade, fever_ticket_price_model_score/grade, fever_season_spend_model_score/grade), Special Flags (millennial born 1981-2000, gen_x born 1965-1980, baby_boomer born 1946-1964, professional_technical, self_employed, retired, student, working_mom, live_event_concerts/arts/sports/family flags, live_event_multiple_categories, live_event_active/repeat/early/late/premium/ancillary/high_spender/traveler buyers)
+
+=== SOURCE 2: MINERVA / NBA DATA (86 columns) ===
+Identity (minerva_nba_fan_id, minerva_person_id, minerva_match_score 50+ acceptable/75+ very confident, league_name, team_acronym IND), Personal (name, gender, birthday, age), Contact (primary_email, personal_email_1/2/3, professional_email_1/2/3, phone_number_1/2/3 with mobile/landline types), Household & Address (household_id, spouse_person_id, marital_status, number_of_children, full address, current_address_market_value, home_ownership_status, home_square_feet, beds, baths, home_purchase_price/date), Social Media (facebook_url, twitter_url, linkedin_url), Education (institution_name, education_level MASTERS etc, majors, minors), Employment & Work (is_likely_remote_worker, is_retired, job_status, job_type full-time, job_department, job_seniority, job_title, normalized_title, company_industry, company_name, company_naics_code/description, company_city/state, linkedin_industry, linkedin_title, company_website), Financial (estimated_income_range: <$100K/$101K-$250K/$251K-$500K/$501K-$1M/>$1M; estimated_wealth_range: up to >$50M)
+
+=== SOURCE 3: CIE SEGMENTATION MENU (pre-built audiences) ===
+TICKET BUYERS: All Event Purchasers 580,730 | Pacers Purchasers 138,511 | Fever Purchasers 80,641 | Pacers Plan Purchasers 6,152 | Fever Plan Purchasers 2,791 | Pacers SG Purchasers 49,151 | Fever SG Purchasers 76,263
+TICKET ATTENDEES: Pacers Attendees 316,411 | Fever Attendees 93,767
+TICKET TRANSFERS: All Ticket Transfers 229,214 | Pacers Ticket Transfers 65,836 | Fever Ticket Transfers 20,156
+RETAIL: All Retail Buyers 101,284 | Pacers Retail Buyers 36,464 | Fever Retail Buyers 41,432 | Boom Retail Buyers 123
+LOCATION: Indiana 1,602,020 | Within 50 Miles 919,733 | Within 150 Miles 1,870,716 | Outside 150 Miles 841,366
+LIVE ANALYTICS: Children in Household 503,923 | Income Level 348,063 (specify bracket) | Propensity Basketball 653,623 (specify score)
+NBA MATCHUPS: Favorite NBA Matchup 37,268 | Favorite WNBA Matchup 41,026 | Previous Pacers/Fever Matchup Purchasers (varies)
+SALESFORCE/CRM: Salesforce Subscribers 452,933 | Consumer Buying Interest 39,688 | Purchase Factors 22,686 | GF Subscribers 195,444 | Fever Fastbreak Subs 51,157 | Fever Flash Subs 47,777 | Game Day Subs 75,411 | SMS Subscribers 37,136 | Ticket Offers Subs 101,259 | Fever SMS Subs 22,922
+UNIVERSITY: .edu Emails 90,254 | University Hat Night Purchasers 5,141
+
+Your role: (1) Answer questions about what data exists and what it means. (2) Generate creative, specific audience curation ideas using actual column names. (3) Suggest how to combine pre-built segments with LiveA/Minerva columns for richer targeting. (4) For partnership questions, use your knowledge and note when web research adds value. (5) Always reference actual column/segment names. (6) For audience ideas give: segment name, columns/sources used, and why it's valuable for Pacers/Fever. Keep responses concise and practical. No markdown headers or asterisks — use clean prose and numbered lists.`;
+
+function toggleVis() {
+  const inp = document.getElementById('api-key-input');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+function launch() {
+  const key = document.getElementById('api-key-input').value.trim();
+  const err = document.getElementById('key-error');
+  if (!key.startsWith('sk-ant-') && !key.startsWith('sk-')) {
+    err.style.display = 'block';
+    return;
+  }
+  err.style.display = 'none';
+  API_KEY = key;
+  sessionStorage.setItem('cie_api_key', key);
+  document.getElementById('key-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  renderWelcome();
+}
+
+function logout() {
+  API_KEY = '';
+  sessionStorage.removeItem('cie_api_key');
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('key-screen').style.display = 'flex';
+  document.getElementById('api-key-input').value = '';
+  document.getElementById('chat-area').innerHTML = '';
+  history = [];
+  fileContext = '';
+}
+
+document.getElementById('api-key-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') launch();
+});
+
+const existing = sessionStorage.getItem('cie_api_key');
+if (existing) {
+  API_KEY = existing;
+  document.getElementById('api-key-input').value = existing;
+  document.getElementById('key-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  renderWelcome();
+}
+
+function handleFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const label = document.getElementById('file-label');
+  label.innerHTML = `<span class="file-name">${file.name}</span><span style="color:var(--text-muted);font-size:11px;margin-left:6px">loaded</span>`;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      if (file.name.endsWith('.csv')) {
+        const text = new TextDecoder().decode(ev.target.result);
+        const lines = text.split('\n').filter(l => l.trim());
+        const header = lines[0].split(',').map(h => h.trim().replace(/"/g,''));
+        const rows = lines.slice(1,6).map(l => {
+          const vals = l.split(',').map(v => v.trim().replace(/"/g,''));
+          const obj = {};
+          header.forEach((h,i) => obj[h] = vals[i]||'');
+          return obj;
+        });
+        fileContext = `\n\nUSER-UPLOADED FILE: "${file.name}"\nColumns: ${header.join(', ')}\nSample rows: ${JSON.stringify(rows.slice(0,3))}`;
+      } else {
+        const wb = XLSX.read(ev.target.result, { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const data = XLSX.utils.sheet_to_json(ws, { defval: '' });
+        const cols = Object.keys(data[0]||{});
+        fileContext = `\n\nUSER-UPLOADED FILE: "${file.name}" (sheet: ${wb.SheetNames[0]})\nColumns: ${cols.join(', ')}\nSample rows: ${JSON.stringify(data.slice(0,3))}`;
+      }
+      addBot(`I've loaded <strong>${file.name}</strong> into our conversation. I can now cross-reference it with the CIE data sources. What would you like to explore?`, []);
+    } catch(err) {
+      addBot('There was a problem reading that file. Make sure it\'s a valid Excel or CSV.');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+document.getElementById('user-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  document.getElementById('user-input').style.height = 'auto';
+  document.getElementById('user-input').style.height = Math.min(document.getElementById('user-input').scrollHeight, 100) + 'px';
+});
+
+document.getElementById('user-input').addEventListener('input', () => {
+  const el = document.getElementById('user-input');
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+});
+
+function addBot(html, chips) {
+  const chat = document.getElementById('chat-area');
+  const d = document.createElement('div');
+  d.className = 'msg bot';
+  const ch = (chips && chips.length) ? `<div class="chips">${chips.map(c=>`<button class="chip" onclick="fillSend(this.dataset.text)" data-text="${c.replace(/"/g,'&quot;')}">${c} ↗</button>`).join('')}</div>` : '';
+  d.innerHTML = `<div class="av">CIE</div><div><div class="bub">${html}</div>${ch}</div>`;
+  chat.appendChild(d);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function addUser(text) {
+  const chat = document.getElementById('chat-area');
+  const d = document.createElement('div');
+  d.className = 'msg user';
+  d.innerHTML = `<div class="av">YOU</div><div><div class="bub">${text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div></div>`;
+  chat.appendChild(d);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function showTyping() {
+  const chat = document.getElementById('chat-area');
+  const d = document.createElement('div');
+  d.className = 'msg bot'; d.id = 'typing';
+  d.innerHTML = `<div class="av">CIE</div><div><div class="bub typing-bub"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
+  chat.appendChild(d);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function removeTyping() { const t = document.getElementById('typing'); if(t) t.remove(); }
+
+function fillSend(text) {
+  document.getElementById('user-input').value = text;
+  sendMessage();
+}
+
+async function sendMessage() {
+  const inp = document.getElementById('user-input');
+  const text = inp.value.trim();
+  if (!text || !API_KEY) return;
+  inp.value = ''; inp.style.height = 'auto';
+  addUser(text);
+  history.push({ role: 'user', content: text });
+  showTyping();
+  const needsWeb = /partner|sponsor|brand|trend|market|rival|competitor|nike|fanatics|delta|chase|current event|latest/i.test(text);
+  try {
+    const body = {
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      system: DATA_CONTEXT + fileContext,
+      messages: history
+    };
+    if (needsWeb) body.tools = [{ type: 'web_search_20250305', name: 'web_search' }];
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': API_KEY, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    removeTyping();
+    if (data.error) { addBot(`API error: ${data.error.message}`); return; }
+    const reply = data.content.filter(b => b.type === 'text').map(b => b.text).join('\n') || 'No response generated.';
+    history.push({ role: 'assistant', content: reply });
+    const chips = getChips(text);
+    addBot(reply.replace(/\n/g,'<br>'), chips);
+  } catch(e) {
+    removeTyping();
+    addBot('Connection error. Check your API key and network connection.');
+  }
+}
+
+function getChips(text) {
+  const t = text.toLowerCase();
+  if (t.includes('family')||t.includes('kids')||t.includes('children')) return ['What partners fit a family audience?','Combine with Fever attendees for family night'];
+  if (t.includes('premium')||t.includes('affluent')||t.includes('income')) return ['What upsell offers suit this segment?','Which Minerva wealth columns refine this?'];
+  if (t.includes('fever')||t.includes('wnba')) return ['Build a Fever season ticket propensity audience','Suggest a Fever co-activation idea'];
+  if (t.includes('pacers')||t.includes('nba')) return ['Cross-reference with basketball propensity score','Build an away-game traveler audience'];
+  if (t.includes('partner')||t.includes('sponsor')) return ['Which columns support a co-branded activation?','What audience overlaps most with this partner?'];
+  if (t.includes('student')||t.includes('college')||t.includes('university')) return ['How big is the .edu email segment?','Combine student segment with hat night purchasers'];
+  return ['Give me 5 audience curation ideas','What segments work for a season ticket push?','What columns reveal high-value fans?'];
+}
+
+function renderWelcome() {
+  const segments = [
+    { src: 'Ticketmaster', name: 'Pacers Purchasers', size: '138,511', col: '#5DCAA5' },
+    { src: 'Ticketmaster', name: 'Fever Purchasers', size: '80,641', col: '#5DCAA5' },
+    { src: 'Location', name: 'Within 50 Miles', size: '919,733', col: '#85B7EB' },
+    { src: 'LiveA', name: 'Basketball Propensity', size: '653,623', col: '#C8A84B' },
+    { src: 'CRM', name: 'Ticket Offers Subs', size: '101,259', col: '#85B7EB' },
+    { src: 'LiveA', name: 'Children in HH', size: '503,923', col: '#C8A84B' },
+  ];
+  const cards = segments.map(s => `<div class="seg-card" onclick="fillSend('Tell me about the ${s.name} segment and give me audience ideas from it')"><div class="sc-src" style="color:${s.col}">${s.src}</div><div class="sc-name">${s.name}</div><div class="sc-size">${s.size}</div></div>`).join('');
+  const chat = document.getElementById('chat-area');
+  const d = document.createElement('div');
+  d.className = 'msg bot';
+  d.innerHTML = `<div class="av">CIE</div><div>
+    <div class="bub">Welcome. I'm your CIE Segmentation Bot — loaded with all three of your data sources: LiveAnalytics/Ticketmaster (278 columns), Minerva/NBA (86 columns), and your Segmentation Menu (40+ pre-built audiences with audience sizes).<br><br>Ask me anything about your data, request audience curation ideas, or upload an additional Excel file above. Click a segment below to get started.</div>
+    <div class="seg-grid">${cards}</div>
+    <div class="chips">
+      <button class="chip" onclick="fillSend('Give me 5 creative audience ideas for Pacers season ticket prospects')">Season ticket prospects ↗</button>
+      <button class="chip" onclick="fillSend('What columns help identify high-value Fever fans?')">High-value Fever fans ↗</button>
+      <button class="chip" onclick="fillSend('What partnership activation audiences can I build from this data?')">Partnership audiences ↗</button>
+      <button class="chip" onclick="fillSend('How would I build a family night campaign audience?')">Family night ↗</button>
+    </div>
+  </div>`;
+  chat.appendChild(d);
+}
+</script>
+</body>
+</html>
